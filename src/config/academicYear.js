@@ -3,7 +3,7 @@
 
 // Межі навчального року. Гортати розклад за ці межі не можна —
 // застосунок обмежує навігацію по тижнях цим діапазоном.
-export const SCHOOL_YEAR_START = '2026-08-31'
+export const SCHOOL_YEAR_START = '2026-09-01'
 export const SCHOOL_YEAR_END = '2027-08-31'
 
 export const VACATIONS = [

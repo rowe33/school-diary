@@ -6,7 +6,8 @@ import LessonModal from './components/LessonModal.vue'
 import ImageLightbox from './components/ImageLightbox.vue'
 import AiAssistant from './components/AiAssistant.vue'
 import UserNameModal from './components/UserNameModal.vue'
-import { fetchHomeworkForRange } from './lib/supabase.js'
+import DayNoteModal from './components/DayNoteModal.vue'
+import { fetchHomeworkForRange, fetchDayNotesForRange } from './lib/supabase.js'
 import { SCHOOL_YEAR_START, SCHOOL_YEAR_END } from './config/academicYear.js'
 import { QUARTERS, getQuarterForDate } from './config/schedule.js'
 import {
@@ -32,10 +33,12 @@ function clampMonday(monday) {
 const isDark = ref(false)
 const currentMonday = ref(clampMonday(getMondayOfWeek(new Date())))
 const homeworkByKey = reactive({})
+const dayNotesByDate = reactive({})
 const isLoading = ref(false)
 const loadError = ref('')
 
 const activeLesson = ref(null) // { date, lesson, homework }
+const activeDayNote = ref(null) // { date, note }
 const lightbox = ref(null) // { images, index }
 
 // ── Профіль користувача (імʼя, без справжньої авторизації) ──
@@ -83,7 +86,7 @@ function selectQuarter(quarterId) {
   currentMonday.value = clampMonday(getMondayOfWeek(new Date(q.start)))
 }
 
-async function loadHomeworkForCurrentWeek() {
+async function loadWeekData() {
   isLoading.value = true
   loadError.value = ''
   const dates = getWeekDates(currentMonday.value)
@@ -91,17 +94,26 @@ async function loadHomeworkForCurrentWeek() {
   const end = toISODate(dates[dates.length - 1])
 
   try {
-    const records = await fetchHomeworkForRange(start, end)
+    const [homeworkRecords, noteRecords] = await Promise.all([
+      fetchHomeworkForRange(start, end),
+      fetchDayNotesForRange(start, end)
+    ])
+
     // Очищуємо старі записи цього тижня та наповнюємо новими
     Object.keys(homeworkByKey).forEach((k) => delete homeworkByKey[k])
-    records.forEach((rec) => {
+    homeworkRecords.forEach((rec) => {
       const key = `${rec.lesson_date}__${rec.subject_name}`
       homeworkByKey[key] = rec
+    })
+
+    Object.keys(dayNotesByDate).forEach((k) => delete dayNotesByDate[k])
+    noteRecords.forEach((rec) => {
+      dayNotesByDate[rec.note_date] = rec
     })
   } catch (err) {
     console.error(err)
     loadError.value =
-      'Не вдалося завантажити домашні завдання. Перевірте налаштування Supabase (.env).'
+      'Не вдалося завантажити дані. Перевірте налаштування Supabase (.env).'
   } finally {
     isLoading.value = false
   }
@@ -136,6 +148,21 @@ function updateLightboxIndex(idx) {
   if (lightbox.value) lightbox.value.index = idx
 }
 
+function openDayNote({ date, note }) {
+  activeDayNote.value = { date, note }
+}
+function closeDayNote() {
+  activeDayNote.value = null
+}
+function onDayNoteSaved(record) {
+  dayNotesByDate[record.note_date] = record
+  closeDayNote()
+}
+function onDayNoteDeleted(id) {
+  const key = Object.keys(dayNotesByDate).find((k) => dayNotesByDate[k].id === id)
+  if (key) delete dayNotesByDate[key]
+}
+
 function openEditName() {
   nameModalMode.value = 'edit'
   showNameModal.value = true
@@ -150,7 +177,7 @@ function onNameModalClose() {
   if (nameModalMode.value === 'edit') showNameModal.value = false
 }
 
-watch(currentMonday, loadHomeworkForCurrentWeek)
+watch(currentMonday, loadWeekData)
 
 onMounted(() => {
   const savedTheme = localStorage.getItem('theme')
@@ -158,7 +185,7 @@ onMounted(() => {
     ? savedTheme === 'dark'
     : window.matchMedia('(prefers-color-scheme: dark)').matches
   applyTheme()
-  loadHomeworkForCurrentWeek()
+  loadWeekData()
 
   const savedName = localStorage.getItem(USER_NAME_KEY)
   if (savedName) {
@@ -210,7 +237,9 @@ onMounted(() => {
       <ScheduleTable
         :monday="currentMonday"
         :homework-by-key="homeworkByKey"
+        :day-notes-by-date="dayNotesByDate"
         @open-lesson="openLesson"
+        @open-day-note="openDayNote"
       />
     </main>
 
@@ -234,6 +263,16 @@ onMounted(() => {
       :index="lightbox.index"
       @close="closeLightbox"
       @update:index="updateLightboxIndex"
+    />
+
+    <DayNoteModal
+      v-if="activeDayNote"
+      :date="activeDayNote.date"
+      :note="activeDayNote.note"
+      :current-user-name="userName"
+      @close="closeDayNote"
+      @saved="onDayNoteSaved"
+      @deleted="onDayNoteDeleted"
     />
 
     <UserNameModal

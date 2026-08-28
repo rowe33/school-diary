@@ -1,16 +1,26 @@
 <script setup>
 import { computed } from 'vue'
-import { Paperclip, FlaskConical, PenLine, AlarmClockCheck, CalendarClock } from 'lucide-vue-next'
+import {
+  Paperclip,
+  FlaskConical,
+  PenLine,
+  AlarmClockCheck,
+  CalendarClock,
+  MessageSquare,
+  MessageSquarePlus,
+  User
+} from 'lucide-vue-next'
 import { WEEKDAYS, getQuarterForDate } from '../config/schedule.js'
 import { getVacationForDate, getHolidayForDate } from '../config/academicYear.js'
 import { getWeekDates, formatDayMonth, isToday, toISODate } from '../utils/dateHelpers.js'
 
 const props = defineProps({
   monday: { type: Date, required: true },
-  homeworkByKey: { type: Object, required: true } // key: `${iso}__${subject}` -> record
+  homeworkByKey: { type: Object, required: true }, // key: `${iso}__${subject}` -> record
+  dayNotesByDate: { type: Object, required: true } // key: iso date -> record
 })
 
-const emit = defineEmits(['open-lesson'])
+const emit = defineEmits(['open-lesson', 'open-day-note'])
 
 const weekDates = computed(() => getWeekDates(props.monday))
 
@@ -33,6 +43,10 @@ const scheduleMissing = computed(() => {
 function homeworkFor(date, subject) {
   const key = `${toISODate(date)}__${subject}`
   return props.homeworkByKey[key] || null
+}
+
+function noteFor(date) {
+  return props.dayNotesByDate[toISODate(date)] || null
 }
 
 function holidayFor(date) {
@@ -208,6 +222,39 @@ function homeworkPreview(hw) {
           >
             Уроків немає
           </p>
+        </div>
+
+        <!-- Коментар до дня -->
+        <div class="mt-auto border-t border-black/5 dark:border-white/10 px-4 py-3">
+          <template v-if="noteFor(weekDates[dayIndex])">
+            <button
+              class="w-full text-left tap-scale"
+              @click="
+                emit('open-day-note', {
+                  date: weekDates[dayIndex],
+                  note: noteFor(weekDates[dayIndex])
+                })
+              "
+            >
+              <p class="flex items-start gap-1.5 text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+                <MessageSquare :size="12" class="shrink-0 mt-0.5 text-gray-400" />
+                <span class="whitespace-pre-wrap">{{ noteFor(weekDates[dayIndex]).comment }}</span>
+              </p>
+              <p
+                v-if="noteFor(weekDates[dayIndex]).added_by"
+                class="flex items-center gap-1 text-[11px] text-gray-400 mt-1 pl-[18px]"
+              >
+                <User :size="10" /> {{ noteFor(weekDates[dayIndex]).added_by }}
+              </p>
+            </button>
+          </template>
+          <button
+            v-else
+            class="w-full flex items-center justify-center gap-1 text-xs text-gray-400 hover:text-accent transition-colors py-1 tap-scale"
+            @click="emit('open-day-note', { date: weekDates[dayIndex], note: null })"
+          >
+            <MessageSquarePlus :size="13" /> Додати коментар до дня
+          </button>
         </div>
       </div>
     </div>
