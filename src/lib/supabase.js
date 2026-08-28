@@ -42,6 +42,7 @@ export async function saveHomework(record) {
     is_control: !!record.is_control,
     is_independent: !!record.is_independent,
     is_practical: !!record.is_practical,
+    is_lab: !!record.is_lab,
     attachments: record.attachments ?? [],
     added_by: record.added_by ?? null
   }

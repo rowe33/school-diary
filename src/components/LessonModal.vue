@@ -38,6 +38,7 @@ const form = reactive({
   is_control: props.homework?.is_control || false,
   is_independent: props.homework?.is_independent || false,
   is_practical: props.homework?.is_practical || false,
+  is_lab: props.homework?.is_lab || false,
   attachments: [...(props.homework?.attachments || [])]
 })
 
@@ -48,6 +49,7 @@ watch(
     form.is_control = hw?.is_control || false
     form.is_independent = hw?.is_independent || false
     form.is_practical = hw?.is_practical || false
+    form.is_lab = hw?.is_lab || false
     form.attachments = [...(hw?.attachments || [])]
   }
 )
@@ -88,6 +90,7 @@ async function handleSave() {
       is_control: form.is_control,
       is_independent: form.is_independent,
       is_practical: form.is_practical,
+      is_lab: form.is_lab,
       attachments: [...form.attachments, ...newUrls],
       added_by: props.currentUserName || props.homework?.added_by || null
     }
@@ -265,6 +268,14 @@ function openLightboxAt(idx) {
                       class="w-4 h-4 rounded accent-accent"
                     />
                     Практична робота
+                  </label>
+                  <label class="flex items-center gap-2.5 text-sm cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      v-model="form.is_lab"
+                      class="w-4 h-4 rounded accent-accent"
+                    />
+                    Лабораторна робота
                   </label>
                   <label class="flex items-center gap-2.5 text-sm cursor-pointer select-none">
                     <input
