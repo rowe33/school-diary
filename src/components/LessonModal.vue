@@ -198,6 +198,12 @@ function openLightboxAt(idx) {
                     >
                       <FlaskConical :size="12" /> Практична робота
                     </span>
+                    <span
+                      v-if="homework.is_lab"
+                      class="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-pink-500/10 text-pink-600 dark:text-pink-400"
+                    >
+                      <FlaskConical :size="12" /> Лабораторна робота
+                    </span>
                   </div>
 
                   <p class="text-sm whitespace-pre-wrap leading-relaxed">
