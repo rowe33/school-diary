@@ -205,6 +205,12 @@ function homeworkPreview(hw) {
                   <FlaskConical :size="11" /> Практична
                 </span>
                 <span
+                  v-if="homeworkFor(weekDates[dayIndex], lesson.subject).is_lab"
+                  class="inline-flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded-md bg-pink-500/10 text-pink-600 dark:text-pink-400"
+                >
+                  <FlaskConical :size="11" /> Лабораторна
+                </span>
+                <span
                   v-if="homeworkFor(weekDates[dayIndex], lesson.subject).attachments?.length"
                   class="inline-flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded-md bg-accent/10 text-accent"
                 >
